@@ -73,6 +73,8 @@ module.exports = {
           children: [
             'decisions/',
             // Decisions are sorted descending by date.
+            'decisions/20211224_2_controller_client',
+            'decisions/20211224_1_protobuf_commands',
             'decisions/20211123_automation_replacements',
             'decisions/20211101_unified_brewblox_ctl',
             'decisions/20210929_python_upgrade',
