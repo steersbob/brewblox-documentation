@@ -37,7 +37,7 @@ We can replace the controlbox protocol with a standard protobuf message,
 but messages would remain partially dynamic. For example, the *List Objects* command (read all blocks on controller), should then be typed as a list of a union of every block type.
 Technically, this can be done by declaring a OneOf protobuf field, but having a OneOf with every single block type is incredibly ugly.
 
-This can be resolved in much the same way as it is now: payloads are expressed using two fields: an descriptor identifier, and a `bytes` field that contains a protobuf-encoded submessage.
+This can be resolved in much the same way as it is now: payloads are expressed using two fields: an descriptor identifier, and a `string` field that contains a protobuf-encoded submessage as base64 string.
 
 We want to group stored procedures by block type, and support multiple procedures per type.
 This means that the current descriptor identifier as used in the controlbox spec is no longer sufficient: we need more fine-grained specification.
@@ -47,10 +47,10 @@ The message descriptor lookup is then done using `objtype` + `subtype`.
 
 In pseudo-code, this would look like:
 ```python
-encoded = proto_encode({
+encoded_payload = proto_encode({
   "objtype": 1234,
   "subtype": 2,
-  "payload": proto_encode(block_data),
+  "data": b64encode(proto_encode(block_data)),
 })
 ```
 
@@ -69,7 +69,8 @@ message BrewbloxMessageOptions {
 extend google.protobuf.MessageOptions { BrewbloxMessageOptions brewblox_msg = 50001 [ (nanopb).type = FT_IGNORE ]; }
 ```
 
-We define basic messages for requests and response. The Spark parses all incoming messages using the request descriptor, and the service parses all incoming messages using the response descriptor.
+We define basic messages for requests and response. The encoded messages are converted to base64 before serialization.
+The Spark parses all incoming messages using the request descriptor, and the service parses all incoming messages using the response descriptor.
 
 The payload for responses can be repeated (eg. list objects), but there are no repeated payloads for requests.
 
@@ -80,7 +81,7 @@ message ControlboxPayload {
   optional uint32 blockId = 1;
   optional BrewbloxTypes.BlockType objtype = 2;
   optional uint32 subtype = 3 [ (nanopb).int_size = IS_16 ];
-  optional bytes data = 4;
+  optional string data = 4;
 }
 
 message ControlboxRequest {
